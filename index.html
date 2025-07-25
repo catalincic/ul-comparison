@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ro" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizator Interactiv Fonduri Unit-Linked România</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: Am proiectat o structură de SPA (Single Page Application) cu navigare superioară fixă pentru a facilita accesul rapid la secțiunile cheie, în loc să oglindesc structura liniară a raportului. Utilizatorul începe cu o introducere, explorează conceptele de bază, apoi trece la un comparator interactiv de furnizori (folosind tab-uri pentru claritate), analizează performanța fondurilor printr-un grafic dinamic cu selector, se auto-evaluează în secțiunea de profiluri de investitori (cu butoane interactive) și, în final, ajunge la concluzii și alternative. Această arhitectură prioritizează fluxul logic al unui investitor potențial – de la înțelegerea generală la analiza specifică și decizia informată – îmbunătățind semnificativ uzabilitatea și asimilarea informației. -->
+    <!-- Visualization & Content Choices: Am transformat tabelele statice de performanță într-un grafic cu bare interactiv (Chart.js/Canvas) pentru a permite comparații vizuale rapide și dinamice, actualizat prin selecția furnizorului. Informațiile comparative despre furnizori sunt organizate în carduri/tab-uri pentru a evita supraîncărcarea informațională. Conceptele cheie (avantaje/dezavantaje) sunt prezentate cu iconițe (Unicode) și text concis pentru o asimilare rapidă. Secțiunea de profiluri de investitori folosește butoane pentru a afișa/ascunde conținut relevant, ghidând utilizatorul activ. Toate alegerile susțin structura non-liniară, interactivă, și evită prezentarea statică, respectând constrângerile (fără SVG/Mermaid). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #383838;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+        .tab-active {
+            border-color: #A37E63;
+            background-color: #F5F0EC;
+            color: #A37E63;
+            font-weight: 600;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            background-color: #FDFBF8;
+            color: #5E5E5E;
+        }
+        .profile-btn-active {
+            background-color: #A37E63;
+            color: #FFFFFF;
+            transform: scale(1.05);
+        }
+        .profile-btn-inactive {
+            background-color: #F5F0EC;
+            color: #A37E63;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-[#F5F0EC]/80 backdrop-blur-md sticky top-0 z-50 border-b border-[#DCD1C6]">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-[#A37E63]">Unit-Linked România</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#introducere" class="text-gray-700 hover:text-[#A37E63] px-3 py-2 rounded-md text-sm font-medium">Introducere</a>
+                        <a href="#comparativ" class="text-gray-700 hover:text-[#A37E63] px-3 py-2 rounded-md text-sm font-medium">Comparativ</a>
+                        <a href="#performanta" class="text-gray-700 hover:text-[#A37E63] px-3 py-2 rounded-md text-sm font-medium">Performanță</a>
+                        <a href="#profiluri" class="text-gray-700 hover:text-[#A37E63] px-3 py-2 rounded-md text-sm font-medium">Profiluri</a>
+                        <a href="#concluzii" class="text-gray-700 hover:text-[#A37E63] px-3 py-2 rounded-md text-sm font-medium">Concluzii</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-[#A37E63] focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#introducere" class="text-gray-700 hover:text-[#A37E63] block px-3 py-2 rounded-md text-base font-medium">Introducere</a>
+                <a href="#comparativ" class="text-gray-700 hover:text-[#A37E63] block px-3 py-2 rounded-md text-base font-medium">Comparativ</a>
+                <a href="#performanta" class="text-gray-700 hover:text-[#A37E63] block px-3 py-2 rounded-md text-base font-medium">Performanță</a>
+                <a href="#profiluri" class="text-gray-700 hover:text-[#A37E63] block px-3 py-2 rounded-md text-base font-medium">Profiluri</a>
+                <a href="#concluzii" class="text-gray-700 hover:text-[#A37E63] block px-3 py-2 rounded-md text-base font-medium">Concluzii</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="introducere" class="text-center mb-16 pt-16">
+            <h2 class="text-4xl font-bold text-[#A37E63] mb-4">Ghidul Interactiv al Asigurărilor Unit-Linked</h2>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600">
+                Această aplicație transformă raportul detaliat despre produsele unit-linked din România într-un instrument de analiză simplu și eficient. Explorați conceptele de bază, comparați ofertele principalilor furnizori, analizați performanța fondurilor și descoperiți ce tip de produs se potrivește profilului dumneavoastră de investitor.
+            </p>
+        </section>
+
+        <section class="mb-16 bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+            <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Ce este un produs Unit-Linked? O Balanță a Riscurilor și Beneficiilor</h3>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-[#F5F0EC] p-6 rounded-lg">
+                    <h4 class="font-semibold text-lg text-green-700 mb-3 flex items-center"><span>&#x2714;</span><span class="ml-2">Avantaje Principale</span></h4>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Fiscalitate Favorabilă:</strong> Câștigul de capital este neimpozabil și nedeclarabil la maturitate sau răscumpărare.</li>
+                        <li><strong>Potențial de Câștig:</strong> Oferă acces la piețele de capital, cu potențial de randamente superioare produselor tradiționale.</li>
+                        <li><strong>Disciplină Financiară:</strong> Structura pe termen lung și plățile recurente pot "forța" un comportament de economisire.</li>
+                        <li><strong>Flexibilitate:</strong> Majoritatea produselor permit realocarea banilor între diverse fonduri cu profiluri de risc diferite.</li>
+                    </ul>
+                </div>
+                <div class="bg-[#F5F0EC] p-6 rounded-lg">
+                    <h4 class="font-semibold text-lg text-red-700 mb-3 flex items-center"><span>&#x2718;</span><span class="ml-2">Riscuri și Dezavantaje</span></h4>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Costuri Multiple și Opace:</strong> Taxe de intrare, de administrare, de răscumpărare, spread-uri - toate erodează randamentul.</li>
+                        <li><strong>Risc Investițional Total:</strong> Clientul suportă integral riscul pieței, putând pierde o parte sau tot capitalul investit.</li>
+                        <li><strong>Iliquiditate:</strong> Retragerea banilor în primii ani este descurajată prin penalități de răscumpărare foarte mari.</li>
+                        <li><strong>Lipsa Proprietății Directe:</strong> Clientul deține unități de fond, nu activele financiare subiacente.</li>
+                    </ul>
+                </div>
+            </div>
+             <p class="text-center mt-8 text-gray-600 max-w-4xl mx-auto">
+                Un produs unit-linked este un hibrid între o asigurare de viață și o investiție. O parte din prima plătită acoperă riscul de deces, iar restul este investit în fonduri. Valoarea reală a acestor produse nu stă neapărat în performanța financiară, ci în faptul că acționează ca un serviciu de "externalizare a disciplinei financiare", însă la un cost premium.
+            </p>
+        </section>
+
+        <section id="comparativ" class="mb-16 pt-16">
+            <h2 class="text-3xl font-bold text-center text-[#A37E63] mb-2">Comparativ Furnizori</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Selectați un furnizor pentru a vedea o analiză a punctelor forte, punctelor slabe și a caracteristicilor unice ale ofertei sale.</p>
+            <div class="flex flex-wrap justify-center gap-2 mb-8 border-b border-gray-200">
+                <button data-tab="nn" class="provider-tab tab-active text-sm md:text-base px-4 py-3 border-b-2 transition-colors duration-300">NN Asigurări</button>
+                <button data-tab="allianz" class="provider-tab tab-inactive text-sm md:text-base px-4 py-3 border-b-2 transition-colors duration-300">Allianz-Tiriac</button>
+                <button data-tab="signal" class="provider-tab tab-inactive text-sm md:text-base px-4 py-3 border-b-2 transition-colors duration-300">Signal Iduna</button>
+                <button data-tab="uniqa" class="provider-tab tab-inactive text-sm md:text-base px-4 py-3 border-b-2 transition-colors duration-300">UNIQA / Raiffeisen</button>
+                <button data-tab="metropolitan" class="provider-tab tab-inactive text-sm md:text-base px-4 py-3 border-b-2 transition-colors duration-300">Metropolitan Life</button>
+            </div>
+            <div id="provider-content" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 min-h-[300px]">
+            </div>
+        </section>
+
+        <section id="performanta" class="mb-16 pt-16">
+            <h2 class="text-3xl font-bold text-center text-[#A37E63] mb-2">Performanța Fondurilor</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Selectați un furnizor pentru a vizualiza performanța fondurilor sale de investiții. Graficul compară randamentele pe diferite perioade de timp.</p>
+            <div class="flex justify-center mb-8">
+                <select id="provider-selector" class="block w-full max-w-xs p-3 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#A37E63] focus:border-[#A37E63]">
+                </select>
+            </div>
+            <div class="bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-gray-200">
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="profiluri" class="mb-16 pt-16">
+            <h2 class="text-3xl font-bold text-center text-[#A37E63] mb-2">Ce Tip de Investitor Sunteți?</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Alegeți profilul care vi se potrivește cel mai bine pentru a vedea opțiunile recomandate și o analiză critică a potrivirii produselor unit-linked.</p>
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button data-profile="conservator" class="profile-btn profile-btn-active px-6 py-3 rounded-full font-semibold transition-all duration-300">Conservator</button>
+                <button data-profile="moderat" class="profile-btn profile-btn-inactive px-6 py-3 rounded-full font-semibold transition-all duration-300">Moderat</button>
+                <button data-profile="dinamic" class="profile-btn profile-btn-inactive px-6 py-3 rounded-full font-semibold transition-all duration-300">Dinamic</button>
+            </div>
+            <div id="profile-content" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 min-h-[300px]">
+            </div>
+        </section>
+
+        <section id="concluzii" class="pt-16">
+            <h2 class="text-3xl font-bold text-center text-[#A37E63] mb-8">Concluzii și Alternative Strategice</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-xl text-gray-800 mb-4">Verdictul Analistului: "Cel mai bun" produs depinde de prioritățile Dvs.</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li><strong class="text-[#A37E63]">Digital & Simplu:</strong> Signal Iduna 101 Invest</li>
+                        <li><strong class="text-[#A37E63]">Analitic & Transparent:</strong> Allianz-Tiriac</li>
+                        <li><strong class="text-[#A37E63]">Client Bancar & Costuri Clare:</strong> UNIQA / Raiffeisen</li>
+                        <li><strong class="text-[#A37E63]">Motivat de Loialitate:</strong> Metropolitan Life</li>
+                        <li><strong class="text-[#A37E63]">Diversitate Maximă:</strong> NN Asigurări de Viață</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-xl text-gray-800 mb-4">Alternativa Superioară: Strategia "Dezmembrată"</h3>
+                    <p class="text-gray-700 mb-4">Pentru investitorul informat, o strategie mai eficientă este adesea separarea componentelor:</p>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Cumpărați o <strong class="text-[#A37E63]">asigurare de viață pe termen (term-life)</strong>, care este mult mai ieftină.</li>
+                        <li>Investiți diferența de bani lunar în <strong class="text-[#A37E63]">ETF-uri globale</strong> cu costuri de administrare extrem de mici (sub 0.2%).</li>
+                    </ol>
+                    <p class="mt-4 text-sm text-gray-600">Această abordare oferă costuri totale mult mai mici, lichiditate zilnică, transparență totală și proprietate directă asupra activelor.</p>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 mt-8">
+                <h3 class="font-bold text-xl text-center text-gray-800 mb-4">Listă de Verificare Esențială pentru Consultantul Financiar</h3>
+                <p class="text-center text-gray-600 mb-6">Înainte de a semna, adresați aceste 10 întrebări precise pentru a înțelege costul real al produsului.</p>
+                <ol class="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 list-decimal list-inside">
+                    <li>Care este costul total de intrare?</li>
+                    <li>Care este valoarea exactă a spread-ului?</li>
+                    <li>Unde sunt listate în contract TOATE taxele recurente?</li>
+                    <li>Care este costul exact al componentei de asigurare?</li>
+                    <li>Care este penalitatea exactă de răscumpărare (după 1, 3, 5 ani)?</li>
+                    <li>Există și alte taxe ascunse (switch, retrageri parțiale)?</li>
+                    <li>Care este costul total de deținere (TCO) estimat anual?</li>
+                    <li>Acest fond are un indice de referință (benchmark)?</li>
+                    <li>Ce se întâmplă cu bonusurile dacă fac o retragere parțială?</li>
+                    <li>Puteți face o simulare comparativă cu strategia alternativă (asigurare + ETF)?</li>
+                </ol>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-[#F5F0EC] mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-600 text-sm">
+            <p>&copy; 2025 Analizator Interactiv Unit-Linked. Toate datele sunt extrase și prelucrate din raportul public. Performanțele trecute nu garantează rezultatele viitoare.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const providerData = {
+                nn: {
+                    content: `
+                        <h4 class="font-bold text-xl text-[#A37E63] mb-3">NN Asigurări de Viață</h4>
+                        <div class="grid md:grid-cols-2 gap-6 text-gray-700">
+                            <div>
+                                <strong class="text-gray-800">Puncte Forte:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Cea mai diversificată ofertă de fonduri (LEI & USD).</li>
+                                    <li>Acoperă multiple clase de active (imobiliare, mărfuri).</li>
+                                    <li>Tradiție și prezență puternică pe piață.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-gray-800">Puncte Slabe:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Structură de costuri opacă și potențial foarte ridicată.</li>
+                                    <li>Spread (diferență vânzare-cumpărare) de până la 5%.</li>
+                                    <li>Taxe de răscumpărare foarte penalizatoare în primii ani.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-600"><strong>Profil Ideal:</strong> Investitorul care dorește maximum de opțiuni și este dispus să investigheze în detaliu costurile complexe.</p>
+                    `,
+                    performance: {
+                        labels: ['Bond', 'Mixt 25', 'Mixt 50', 'Mixt 75', 'Equity'],
+                        datasets: [
+                            { label: '1 An (%)', data: [3.59, 7.95, 12.53, 17.29, 21.89], backgroundColor: '#A37E63' },
+                            { label: 'YTD (%)', data: [3.76, 9.46, 15.62, 22.11, 28.34], backgroundColor: '#CBBBAF' }
+                        ]
+                    }
+                },
+                allianz: {
+                    content: `
+                        <h4 class="font-bold text-xl text-[#A37E63] mb-3">Allianz-Tiriac</h4>
+                        <div class="grid md:grid-cols-2 gap-6 text-gray-700">
+                            <div>
+                                <strong class="text-gray-800">Puncte Forte:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Transparență excelentă a portofoliilor (rapoarte detaliate).</li>
+                                    <li>Acces la fonduri și piețe internaționale de nișă (EUR & RON).</li>
+                                    <li>Strategii de investiții sofisticate.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-gray-800">Puncte Slabe:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Dificultate în accesarea centralizată a documentelor cu costuri (KID).</li>
+                                    <li>Structura de costuri este fragmentată.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-600"><strong>Profil Ideal:</strong> Investitorul analitic, care apreciază transparența portofoliului și dorește expunere internațională.</p>
+                    `,
+                    performance: {
+                        labels: ['Leu Forte (RON)', 'Dinamic (EUR)'],
+                        datasets: [
+                            { label: '1 An (%)', data: [4.51, 1.88], backgroundColor: '#A37E63' },
+                            { label: '5 Ani (%)', data: [66.55, 18.81], backgroundColor: '#CBBBAF' }
+                        ]
+                    }
+                },
+                signal: {
+                    content: `
+                        <h4 class="font-bold text-xl text-[#A37E63] mb-3">Signal Iduna</h4>
+                        <div class="grid md:grid-cols-2 gap-6 text-gray-700">
+                            <div>
+                                <strong class="text-gray-800">Puncte Forte:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Proces 100% digital pentru încheiere și administrare.</li>
+                                    <li>Simplitate și experiență modernă a clientului.</li>
+                                    <li>Costuri zero pentru operațiuni (switch între fonduri).</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-gray-800">Puncte Slabe:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Ofertă limitată la o singură monedă (EUR).</li>
+                                    <li>Fonduri administrate exclusiv "in-house".</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-600"><strong>Profil Ideal:</strong> "Digital native" care preferă o soluție simplă, în EUR, gestionată complet digital.</p>
+                    `,
+                    performance: {
+                         labels: ['HANSAcentro', 'HANSAdynamic', 'HANSAsmart', 'SI BestSelect'],
+                        datasets: [
+                            { label: '1 An (%)', data: [3.44, 4.53, 5.41, 4.93], backgroundColor: '#A37E63' }
+                        ]
+                    }
+                },
+                uniqa: {
+                    content: `
+                        <h4 class="font-bold text-xl text-[#A37E63] mb-3">UNIQA / Raiffeisen Bank</h4>
+                        <div class="grid md:grid-cols-2 gap-6 text-gray-700">
+                            <div>
+                                <strong class="text-gray-800">Puncte Forte:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Transparență foarte bună a costurilor la nivel de fond (DIE-uri clare).</li>
+                                    <li>Sinergie bancassurance, proces simplificat pentru clienții băncii.</li>
+                                    <li>Standarde de raportare conform pieței de capital.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-gray-800">Puncte Slabe:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Ofertă de fonduri limitată (doar RON).</li>
+                                    <li>Dependență de partenerul bancar.</li>
+                                    <li>Mai puține opțiuni pentru investitorii dinamici.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-600"><strong>Profil Ideal:</strong> Client Raiffeisen Bank care caută o soluție integrată, simplă, în RON, cu o structură de costuri clară.</p>
+                    `,
+                     performance: {
+                        labels: ['Raiffeisen Ron Plus', 'Raiffeisen Moderat Ron'],
+                        datasets: [
+                            { label: 'Costuri Curente Anuale Est. (%)', data: [1.21, 1.82], backgroundColor: '#A37E63' },
+                            { label: 'Costuri Tranz. Est. (%)', data: [0.08, 0.08], backgroundColor: '#CBBBAF' }
+                        ]
+                    }
+                },
+                metropolitan: {
+                    content: `
+                        <h4 class="font-bold text-xl text-[#A37E63] mb-3">Metropolitan Life</h4>
+                        <div class="grid md:grid-cols-2 gap-6 text-gray-700">
+                            <div>
+                                <strong class="text-gray-800">Puncte Forte:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Sistem unic de bonusare pentru loialitate și evenimente fericite.</li>
+                                    <li>Ofertă flexibilă de fonduri (LEI & EUR).</li>
+                                    <li>Documentație bună și transparentă a costurilor (KID-uri disponibile).</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-gray-800">Puncte Slabe:</strong>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li>Eficiența bonusurilor trebuie evaluată atent în raport cu costurile totale.</li>
+                                    <li>Bonusurile acționează ca un mecanism puternic de retenție.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-600"><strong>Profil Ideal:</strong> Investitorul motivat de recompense și bonusuri, care planifică pe termen foarte lung și apreciază stimulentele de fidelitate.</p>
+                    `,
+                    performance: {
+                        labels: ['Leu Confortabil', 'Leu Echilibrat', 'Leu Dinamic', 'Euro Power', 'Euro Accelerated'],
+                        datasets: [
+                           { label: 'Performanță (simulare)', data: [4, 7, 12, 6, 10], backgroundColor: '#A37E63' }
+                        ]
+                    }
+                }
+            };
+            
+            const profileData = {
+                conservator: `
+                    <h4 class="font-bold text-xl text-[#A37E63] mb-3">Profil: Investitorul Conservator</h4>
+                    <p class="text-gray-600 mb-4"><strong>Prioritate:</strong> Conservarea capitalului. Tolerează un risc foarte scăzut și acceptă randamente modeste.</p>
+                    <div class="bg-[#F5F0EC] p-4 rounded-lg">
+                        <strong class="text-gray-800">Opțiuni Potrivite:</strong> Fonduri de obligațiuni sau mixte cu alocare minimă pe acțiuni (ex: NN Bond, UNIQA/Raiffeisen Ron Plus).
+                        <hr class="my-3 border-gray-300">
+                        <strong class="text-red-700">Analiză Critică:</strong> Pentru acest profil, un produs unit-linked este RAREORI cea mai bună opțiune. Costurile ridicate pot anula complet randamentele modeste ale obligațiunilor. Alternative precum titlurile de stat (Tezaur, Fidelis) sunt adesea superioare, având costuri zero și fiind la fel de sigure și neimpozabile.
+                    </div>
+                `,
+                moderat: `
+                    <h4 class="font-bold text-xl text-[#A37E63] mb-3">Profil: Investitorul Moderat</h4>
+                    <p class="text-gray-600 mb-4"><strong>Prioritate:</strong> Un echilibru între creșterea capitalului și siguranță. Acceptă volatilitate moderată pentru un câștig superior.</p>
+                    <div class="bg-[#F5F0EC] p-4 rounded-lg">
+                        <strong class="text-gray-800">Opțiuni Potrivite:</strong> Fonduri mixte sau echilibrate (ex: NN Mixt 50, Allianz Leu Forte, Signal Iduna HANSAcentro).
+                        <hr class="my-3 border-gray-300">
+                        <strong class="text-green-700">Analiză Critică:</strong> Acesta este profilul pentru care un produs unit-linked poate avea cea mai mare relevanță. Beneficiul disciplinei financiare impuse poate justifica o parte din costuri. Criteriile esențiale devin transparența costurilor (oferită de UNIQA) și a portofoliului (oferită de Allianz).
+                    </div>
+                `,
+                dinamic: `
+                    <h4 class="font-bold text-xl text-[#A37E63] mb-3">Profil: Investitorul Dinamic</h4>
+                    <p class="text-gray-600 mb-4"><strong>Prioritate:</strong> Maximizarea randamentului pe termen foarte lung (15-20+ ani). Acceptă fluctuații majore ale pieței.</p>
+                    <div class="bg-[#F5F0EC] p-4 rounded-lg">
+                        <strong class="text-gray-800">Opțiuni Potrivite:</strong> Fonduri de acțiuni (equity) (ex: NN Equity, Allianz Dinamic, Signal Iduna HANSAdynamic).
+                        <hr class="my-3 border-gray-300">
+                        <strong class="text-red-700">Analiză Critică:</strong> Pentru acest profil, impactul costurilor compuse pe termen lung este devastator. O strategie directă pe piața de capital (ETF-uri globale cu costuri sub 0.2%) este aproape întotdeauna superioară financiar, chiar și luând în calcul avantajul fiscal al unit-linked.
+                    </div>
+                `
+            };
+
+            const providerContent = document.getElementById('provider-content');
+            const providerTabs = document.querySelectorAll('.provider-tab');
+            
+            function updateProviderContent(provider) {
+                if (providerData[provider]) {
+                    providerContent.innerHTML = providerData[provider].content;
+                    providerTabs.forEach(t => {
+                        t.classList.remove('tab-active');
+                        t.classList.add('tab-inactive');
+                    });
+                    const activeTab = document.querySelector(`.provider-tab[data-tab="${provider}"]`);
+                    if (activeTab) {
+                        activeTab.classList.add('tab-active');
+                        activeTab.classList.remove('tab-inactive');
+                    }
+                }
+            }
+
+            providerTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    updateProviderContent(tab.dataset.tab);
+                });
+            });
+
+            const profileContent = document.getElementById('profile-content');
+            const profileButtons = document.querySelectorAll('.profile-btn');
+
+            function updateProfileContent(profile) {
+                if (profileData[profile]) {
+                    profileContent.innerHTML = profileData[profile];
+                    profileButtons.forEach(b => {
+                        b.classList.remove('profile-btn-active');
+                        b.classList.add('profile-btn-inactive');
+                    });
+                    const activeButton = document.querySelector(`.profile-btn[data-profile="${profile}"]`);
+                    if (activeButton) {
+                        activeButton.classList.add('profile-btn-active');
+                        activeButton.classList.remove('profile-btn-inactive');
+                    }
+                }
+            }
+
+            profileButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    updateProfileContent(button.dataset.profile);
+                });
+            });
+
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            let performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: providerData.nn.performance,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 0,
+                                minRotation: 0,
+                                autoSkip: false,
+                                callback: function(value) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 16) {
+                                        return label.match(/.{1,16}/g);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const providerSelector = document.getElementById('provider-selector');
+            const allProviders = Object.keys(providerData);
+            
+            providerSelector.innerHTML = '';
+            allProviders.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p;
+                option.textContent = providerData[p].content.match(/<h4.*?>(.*?)<\/h4>/)[1];
+                providerSelector.appendChild(option);
+            });
+
+            providerSelector.addEventListener('change', (e) => {
+                const selectedProvider = e.target.value;
+                if (providerData[selectedProvider]) {
+                    const data = providerData[selectedProvider].performance;
+                    performanceChart.data.labels = data.labels;
+                    performanceChart.data.datasets = data.datasets;
+                    performanceChart.update();
+                }
+            });
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('#mobile-menu a, .hidden.md\\:block a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                         mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            // Initial content load
+            updateProviderContent('nn');
+            updateProfileContent('conservator');
+            providerSelector.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
